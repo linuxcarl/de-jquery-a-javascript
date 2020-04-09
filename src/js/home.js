@@ -65,5 +65,65 @@ fetch('https://randomuser.me/api/')
   })
   .catch(e => console.log(e));
   */
+const API = 'https://yts.mx/api/v2/list_movies.json';
+(async function load() {
+
+  console.time()
+  console.log('Iniciando....')
+  async function getData(genre) {
+    const result = await fetch(API + '?genre=' + genre)
+    return await result.json();
+  }
+  function videoItemTemplate(movie) {
+    return (` 
+        <div class="primaryPlaylistItem">
+          <div class="primaryPlaylistItem-image">
+            <img src="${movie.medium_cover_image}">
+          </div>
+          <h4 class="primaryPlaylistItem-title">
+            ${movie.title}
+          </h4>
+        </div>`);
+  }
+  function createTemplate(htmlString) {
+    const $html = document.implementation.createHTMLDocument()
+    $html.body.innerHTML = htmlString;
+    return $html.body.children[0];
+  }
+  function renderMovieList(list, $container) {
+    $container.children[0].remove();
+    list.forEach(movie => {
+      const htmlString = videoItemTemplate(movie);
+      const movieElment =  createTemplate(htmlString);
+      $container.append(movieElment);
+    });
+  }
+  const actionList = await getData('action');
+  const dramaList = await getData('drama');
+  const animationList = await getData('animation');
+
+  //signo de $ en variables significa que es elemento del dom
+  const $actionContainer = document.querySelector('#action');
+  const $dreamContainer = document.getElementById('drama');
+  const $animationContainer = document.getElementById('animation');
+
+  //const $home = $('.home .list #item);// en jquery
+  const $modal = document.getElementById('modal');
+  const $overlay = document.getElementById('overlay');
+  const $hideModal = document.getElementById('hide-modal');
+
+  const $featuringContainer = document.getElementById('featuring');
+  const $form = document.getElementById('form');
+  const $home = document.getElementById('home');
+
+  const modalTitle = $modal.querySelector('h1');
+  const modalImage = $modal.querySelector('img');
+  const modalDescription = $modal.querySelector('p');
 
   
+  renderMovieList(actionList.data.movies , $actionContainer);
+  renderMovieList(dramaList.data.movies , $dreamContainer);
+  renderMovieList(animationList.data.movies , $animationContainer);
+
+  console.timeEnd();
+})()
