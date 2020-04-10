@@ -74,6 +74,28 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     const result = await fetch(API + '?genre=' + genre)
     return await result.json();
   }
+  const $form = document.getElementById('form');
+  const $featuringContainer = document.getElementById('featuring');
+  const $home = document.getElementById('home');
+
+  function setAttributes($element, attributes) {
+    for(const attribute in attributes){
+      $element.setAttribute(attribute, attributes[attribute]);
+    }
+  }
+
+  $form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    $home.classList.add('search-active');
+    const $loader = document.createElement('img');
+    setAttributes($loader, {
+      src: 'src/images/loader.gif',
+      heigth: 50,
+      width: 50
+    });
+    $featuringContainer.append($loader);
+  });
+
   function videoItemTemplate(movie) {
     return (` 
         <div class="primaryPlaylistItem">
@@ -90,12 +112,18 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     $html.body.innerHTML = htmlString;
     return $html.body.children[0];
   }
+  function addEventClick($element) {
+    $element.addEventListener('click', () => {
+      showModal();
+    });
+  }
   function renderMovieList(list, $container) {
     $container.children[0].remove();
     list.forEach(movie => {
       const htmlString = videoItemTemplate(movie);
-      const movieElment =  createTemplate(htmlString);
+      const movieElment = createTemplate(htmlString);
       $container.append(movieElment);
+      addEventClick(movieElment);
     });
   }
   const actionList = await getData('action');
@@ -107,23 +135,31 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
   const $dreamContainer = document.getElementById('drama');
   const $animationContainer = document.getElementById('animation');
 
+  renderMovieList(actionList.data.movies, $actionContainer);
+  renderMovieList(dramaList.data.movies, $dreamContainer);
+  renderMovieList(animationList.data.movies, $animationContainer);
+
   //const $home = $('.home .list #item);// en jquery
   const $modal = document.getElementById('modal');
   const $overlay = document.getElementById('overlay');
-  const $hideModal = document.getElementById('hide-modal');
 
-  const $featuringContainer = document.getElementById('featuring');
-  const $form = document.getElementById('form');
-  const $home = document.getElementById('home');
-
+  
   const modalTitle = $modal.querySelector('h1');
   const modalImage = $modal.querySelector('img');
   const modalDescription = $modal.querySelector('p');
 
+  function showModal() {
+    $overlay.classList.add('active');
+    $modal.style.animation = 'modalIn .8s forwards';
+  }
   
-  renderMovieList(actionList.data.movies , $actionContainer);
-  renderMovieList(dramaList.data.movies , $dreamContainer);
-  renderMovieList(animationList.data.movies , $animationContainer);
+  const $hideModal = document.getElementById('hide-modal');
+  $hideModal.addEventListener('click', hideModal);
+  function hideModal() {
+    $overlay.classList.remove('active');
+    $modal.style.animation = 'modalOut .4s forwards';
+  }
+
 
   console.timeEnd();
 })()
