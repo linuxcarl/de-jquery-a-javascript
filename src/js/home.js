@@ -70,8 +70,8 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
 
   console.time()
   console.log('Iniciando....')
-  async function getData(genre) {
-    const result = await fetch(API + '?genre=' + genre)
+  async function getData(query) {
+    const result = await fetch(API + query)
     return await result.json();
   }
   const $form = document.getElementById('form');
@@ -79,12 +79,22 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
   const $home = document.getElementById('home');
 
   function setAttributes($element, attributes) {
-    for(const attribute in attributes){
+    for (const attribute in attributes) {
       $element.setAttribute(attribute, attributes[attribute]);
     }
   }
-
-  $form.addEventListener('submit', (event) => {
+  function featuringTemplate(peli) {
+    return (`<div class="featuring">
+        <div class="featuring-image">
+          <img src="${peli.medium_cover_image}" width="70" height="100" alt="">
+        </div>
+        <div class="featuring-content">
+          <p class="featuring-title">Pelicula encontrada</p>
+          <p class="featuring-album">${peli.title}</p>
+        </div>
+      </div>`);
+  }
+  $form.addEventListener('submit', async (event) => {
     event.preventDefault();
     $home.classList.add('search-active');
     const $loader = document.createElement('img');
@@ -94,11 +104,19 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
       width: 50
     });
     $featuringContainer.append($loader);
+
+    const data = new FormData($form);
+    const { data: {
+      movies: pelis
+    }
+    } = await getData(`?limit=1&query_terms=${data.get('name')}`);
+    const htmlString = featuringTemplate(pelis[0]);
+    $featuringContainer.innerHTML = htmlString;
   });
 
-  function videoItemTemplate(movie) {
+  function videoItemTemplate(movie, category) {
     return (` 
-        <div class="primaryPlaylistItem">
+        <div class="primaryPlaylistItem" data-id="${movie.id}" data-category="${category}">
           <div class="primaryPlaylistItem-image">
             <img src="${movie.medium_cover_image}">
           </div>
@@ -114,45 +132,66 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
   }
   function addEventClick($element) {
     $element.addEventListener('click', () => {
-      showModal();
+      showModal($element);
     });
   }
-  function renderMovieList(list, $container) {
+  function renderMovieList(list, $container, category) {
     $container.children[0].remove();
     list.forEach(movie => {
-      const htmlString = videoItemTemplate(movie);
+      const htmlString = videoItemTemplate(movie, category);
       const movieElment = createTemplate(htmlString);
       $container.append(movieElment);
       addEventClick(movieElment);
     });
   }
-  const actionList = await getData('action');
-  const dramaList = await getData('drama');
-  const animationList = await getData('animation');
+  const { data: { movies: actionList } } = await getData('?genre=action');
+  const { data: { movies: dramaList } } = await getData('?genre=drama');
+  const { data: { movies: animationList } } = await getData('?genre=animation');
 
   //signo de $ en variables significa que es elemento del dom
   const $actionContainer = document.querySelector('#action');
   const $dreamContainer = document.getElementById('drama');
   const $animationContainer = document.getElementById('animation');
 
-  renderMovieList(actionList.data.movies, $actionContainer);
-  renderMovieList(dramaList.data.movies, $dreamContainer);
-  renderMovieList(animationList.data.movies, $animationContainer);
+  renderMovieList(actionList, $actionContainer, 'action');
+  renderMovieList(dramaList, $dreamContainer, 'dream');
+  renderMovieList(animationList, $animationContainer, 'animation');
 
   //const $home = $('.home .list #item);// en jquery
   const $modal = document.getElementById('modal');
   const $overlay = document.getElementById('overlay');
 
-  
+
+
+  function findById(list, id) {
+    return list.find(movie => parseInt(movie.id, 10) === parseInt(id, 10))
+  }
+  function findMovie(id, category) {
+    if(category === 'action')
+      return findById(actionList, id)
+    else if(category === 'drama')
+      return findById(dramaList, id)
+    else
+      return findById(animationList, id)
+  }
+
   const modalTitle = $modal.querySelector('h1');
   const modalImage = $modal.querySelector('img');
   const modalDescription = $modal.querySelector('p');
 
-  function showModal() {
+  function showModal($element) {
     $overlay.classList.add('active');
     $modal.style.animation = 'modalIn .8s forwards';
+    const id = $element.dataset.id;
+    const category = $element.dataset.category;
+
+    const data = findMovie(id, category);
+    
+    modalTitle.textContent = data.title;
+    modalImage.setAttribute('src',data.medium_cover_image)
+    modalDescription.textContent = data.description_full;
   }
-  
+
   const $hideModal = document.getElementById('hide-modal');
   $hideModal.addEventListener('click', hideModal);
   function hideModal() {
