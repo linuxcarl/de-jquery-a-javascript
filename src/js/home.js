@@ -139,28 +139,35 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     $container.children[0].remove();
     list.forEach(movie => {
       const htmlString = videoItemTemplate(movie, category);
-      const movieElment = createTemplate(htmlString);
-      $container.append(movieElment);
-      addEventClick(movieElment);
+      const movieElement = createTemplate(htmlString);
+      $container.append(movieElement);
+      const image = movieElement.querySelector('img');
+      image.addEventListener('load', (event)=> {
+        movieElement.classList.add('fadeIn');
+      });
+      addEventClick(movieElement);
     });
   }
-  const { data: { movies: actionList } } = await getData('?genre=action');
-  const { data: { movies: dramaList } } = await getData('?genre=drama');
-  const { data: { movies: animationList } } = await getData('?genre=animation');
 
   //signo de $ en variables significa que es elemento del dom
+  const { data: { movies: actionList } } = await getData('?genre=action');
   const $actionContainer = document.querySelector('#action');
-  const $dreamContainer = document.getElementById('drama');
-  const $animationContainer = document.getElementById('animation');
-
   renderMovieList(actionList, $actionContainer, 'action');
+
+
+  const { data: { movies: dramaList } } = await getData('?genre=drama');
+  const $dreamContainer = document.getElementById('drama');
   renderMovieList(dramaList, $dreamContainer, 'dream');
+
+
+  const { data: { movies: animationList } } = await getData('?genre=animation');
+  const $animationContainer = document.getElementById('animation');
   renderMovieList(animationList, $animationContainer, 'animation');
+
 
   //const $home = $('.home .list #item);// en jquery
   const $modal = document.getElementById('modal');
   const $overlay = document.getElementById('overlay');
-
 
 
   function findById(list, id) {
