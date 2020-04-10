@@ -72,7 +72,12 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
   console.log('Iniciando....')
   async function getData(query) {
     const result = await fetch(API + query)
-    return await result.json();
+    const data = await result.json();
+    if (data.data.movie_count > 0)
+      return data;
+    throw new Error('No se encontro ningun registro');
+
+
   }
   const $form = document.getElementById('form');
   const $featuringContainer = document.getElementById('featuring');
@@ -106,12 +111,18 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     $featuringContainer.append($loader);
 
     const data = new FormData($form);
-    const { data: {
-      movies: pelis
+    try {
+      const { data: {
+          movies: pelis
+        }
+      } = await getData(`?limit=1&query_term=${data.get('name')}`);
+      const htmlString = featuringTemplate(pelis[0]);
+      $featuringContainer.innerHTML = htmlString;
+    } catch (error) {
+      alert(error);
+      $loader.remove();
+      $home.classList.remove('search-active')
     }
-    } = await getData(`?limit=1&query_terms=${data.get('name')}`);
-    const htmlString = featuringTemplate(pelis[0]);
-    $featuringContainer.innerHTML = htmlString;
   });
 
   function videoItemTemplate(movie, category) {
@@ -142,7 +153,7 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
       const movieElement = createTemplate(htmlString);
       $container.append(movieElement);
       const image = movieElement.querySelector('img');
-      image.addEventListener('load', (event)=> {
+      image.addEventListener('load', (event) => {
         movieElement.classList.add('fadeIn');
       });
       addEventClick(movieElement);
@@ -174,9 +185,9 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     return list.find(movie => parseInt(movie.id, 10) === parseInt(id, 10))
   }
   function findMovie(id, category) {
-    if(category === 'action')
+    if (category === 'action')
       return findById(actionList, id)
-    else if(category === 'drama')
+    else if (category === 'drama')
       return findById(dramaList, id)
     else
       return findById(animationList, id)
@@ -193,9 +204,9 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     const category = $element.dataset.category;
 
     const data = findMovie(id, category);
-    
+
     modalTitle.textContent = data.title;
-    modalImage.setAttribute('src',data.medium_cover_image)
+    modalImage.setAttribute('src', data.medium_cover_image)
     modalDescription.textContent = data.description_full;
   }
 
