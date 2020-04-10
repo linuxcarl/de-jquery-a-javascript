@@ -69,7 +69,6 @@ const API = 'https://yts.mx/api/v2/';
 let estrenoList = [];
 (async function load() {
 
-  console.time()
   async function getData(query) {
     const result = await fetch(API + query)
     const data = await result.json();
@@ -159,19 +158,36 @@ let estrenoList = [];
       addEventClick(movieElement);
     });
   }
+  async function cacheExist(category) {
+    const listName = `${category}List`;
+    const cacheList = localStorage.getItem(listName);
 
+    if (cacheList) {
+      return JSON.parse(cacheList);
+    }
+    const { data: { movies: data } } = await getData(`list_movies.json?genre=${category}`)
+    localStorage.setItem(listName, JSON.stringify(data))
+
+    return data;
+  }
   //signo de $ en variables significa que es elemento del dom
-  const { data: { movies: actionList } } = await getData('list_movies.json?genre=action');
+  //const { data: { movies: actionList } } = await getData('list_movies.json?genre=action');
+  //localStorage.setItem('actionList', JSON.stringify(actionList))
+  const actionList = await cacheExist('action');
   const $actionContainer = document.querySelector('#action');
   renderMovieList(actionList, $actionContainer, 'action');
 
 
-  const { data: { movies: dramaList } } = await getData('list_movies.json?genre=drama');
+  //const { data: { movies: dramaList } } = await getData('list_movies.json?genre=drama');
+  //localStorage.setItem('dramaList', JSON.stringify(dramaList))
+  const dramaList = await cacheExist('drama');
   const $dramaContainer = document.getElementById('drama');
   renderMovieList(dramaList, $dramaContainer, 'drama');
 
 
-  const { data: { movies: animationList } } = await getData('list_movies.json?genre=animation');
+  //const { data: { movies: animationList } } = await getData('list_movies.json?genre=animation');
+  //localStorage.setItem('animationList', JSON.stringify(animationList))
+  const animationList = await cacheExist('animation');
   const $animationContainer = document.getElementById('animation');
   renderMovieList(animationList, $animationContainer, 'animation');
 
@@ -239,7 +255,4 @@ let estrenoList = [];
         addEventClick(estrenoElement);
       })
     });
- 
-
-  console.timeEnd();
 })()
