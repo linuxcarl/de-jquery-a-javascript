@@ -65,11 +65,11 @@ fetch('https://randomuser.me/api/')
   })
   .catch(e => console.log(e));
   */
-const API = 'https://yts.mx/api/v2/list_movies.json';
+const API = 'https://yts.mx/api/v2/';
+let estrenoList = [];
 (async function load() {
 
   console.time()
-  console.log('Iniciando....')
   async function getData(query) {
     const result = await fetch(API + query)
     const data = await result.json();
@@ -113,9 +113,9 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     const data = new FormData($form);
     try {
       const { data: {
-          movies: pelis
-        }
-      } = await getData(`?limit=1&query_term=${data.get('name')}`);
+        movies: pelis
+      }
+      } = await getData(`list_movies.json?limit=1&query_term=${data.get('name')}`);
       const htmlString = featuringTemplate(pelis[0]);
       $featuringContainer.innerHTML = htmlString;
     } catch (error) {
@@ -161,17 +161,17 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
   }
 
   //signo de $ en variables significa que es elemento del dom
-  const { data: { movies: actionList } } = await getData('?genre=action');
+  const { data: { movies: actionList } } = await getData('list_movies.json?genre=action');
   const $actionContainer = document.querySelector('#action');
   renderMovieList(actionList, $actionContainer, 'action');
 
 
-  const { data: { movies: dramaList } } = await getData('?genre=drama');
-  const $dreamContainer = document.getElementById('drama');
-  renderMovieList(dramaList, $dreamContainer, 'dream');
+  const { data: { movies: dramaList } } = await getData('list_movies.json?genre=drama');
+  const $dramaContainer = document.getElementById('drama');
+  renderMovieList(dramaList, $dramaContainer, 'drama');
 
 
-  const { data: { movies: animationList } } = await getData('?genre=animation');
+  const { data: { movies: animationList } } = await getData('list_movies.json?genre=animation');
   const $animationContainer = document.getElementById('animation');
   renderMovieList(animationList, $animationContainer, 'animation');
 
@@ -189,8 +189,11 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
       return findById(actionList, id)
     else if (category === 'drama')
       return findById(dramaList, id)
-    else
+    else if(category === 'animation')
       return findById(animationList, id)
+    else
+      return findById(estrenoList, id)
+
   }
 
   const modalTitle = $modal.querySelector('h1');
@@ -217,6 +220,26 @@ const API = 'https://yts.mx/api/v2/list_movies.json';
     $modal.style.animation = 'modalOut .4s forwards';
   }
 
+  //para la barra lateral de estrenos
+  const $estrenoContainer = document.getElementById('estrenos');
+  $estrenoContainer.innerHTML='';
+  await getData('movie_suggestions.json?movie_id=1')
+    .then(({ data: { movies: list } }) => {
+      estrenoList = list;
+      list.forEach((movie) => {
+        const htmlString = `<li class="myPlaylist-item" data-id="${movie.id}" data-category="${estrenos}">
+                        <a href="#">
+                          <span>
+                            ${movie.title}
+                          </span>
+                        </a>
+                      </li>`;
+        const estrenoElement = createTemplate(htmlString);
+        $estrenoContainer.append(estrenoElement);
+        addEventClick(estrenoElement);
+      })
+    });
+ 
 
   console.timeEnd();
 })()
